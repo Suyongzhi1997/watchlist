@@ -1,7 +1,7 @@
 import sys, os
 import click
 from flask import Flask, render_template  # 从flask包导入Flask类
-from flask import url_for
+from flask import url_for, request, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 
 WIN = sys.platform.startswith('win')
@@ -12,6 +12,7 @@ else:
     prefix = 'sqlite:////'
 
 app = Flask(__name__)  # 实例化类，创建一个程序对象app
+app.secret_key = 'flask'
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型 修改的监控
 db = SQLAlchemy(app)  # 初始化扩展，传入程序实例app
@@ -62,17 +63,63 @@ def inject_user():
     return dict(user=user)
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
+    if request.method == 'POST':  # 判断是否POST请求
+        # 获取表单数据
+        title = request.form.get('title')
+        year = request.form.get('year')
+        if not title or not year or len(year) < 4 or len(title) > 60:
+            flash('输入错误!')
+            return redirect(url_for('index'))  # 重定向回主页面
+        movie = Movie(title=title, year=year)  # 创建记录
+        db.session.add(movie)
+        db.session.commit()
+        flash('数据添加成功!')
+        return redirect(url_for('index'))  # 数据添加成功重定向回主页面
+
     user = User.query.first()
     movies = Movie.query.all()
+    # print(1 / 0)
     return render_template('index.html', movies=movies)
+
+
+@app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+def edit(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    if request.method == 'POST':
+        title = request.form['title']
+        year = request.form['year']
+        if not title or not year or len(year) < 4 or len(title) > 60:
+            flash('输入错误!')
+            return redirect(url_for('edit', movie_id=movie_id))  # 重定向回主页面
+        movie.title = title
+        movie.year = year
+        db.session.commit()
+        flash('修改数据成功!')
+        return redirect(url_for('index'))
+    return render_template('edit.html', movie=movie)
+
+
+@app.route('/movie/delete/<int:movie_id>', methods=['POST'])
+def delete(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    db.session.delete(movie)
+    db.session.commit()
+    flash('删除成功!')
+    return redirect(url_for('index'))
 
 
 @app.errorhandler(404)
 def page_not_found(e):  # 接收异常对象作为参数
     user = User.query.first()
     return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def page_500_error(e):
+    return render_template('500.html'), 500
+    # return "500 error"
 
 
 @app.route('/user/<name>')  # 注册路由，使用装饰器绑定URL
@@ -94,4 +141,4 @@ def test_url_for():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
