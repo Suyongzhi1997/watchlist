@@ -19,6 +19,12 @@
         <li>
             <a href="{{ url_for('index') }}">主页</a>
         </li>
+        {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('settings') }}">设置</a></li>
+            <li><a href="{{ url_for('logout') }}">退出</a></li>
+        {% else %}
+            <li><a href="{{ url_for('login') }}">登录</a></li>
+        {% endif %}
     </ul>
 </nav>
 {% for message in get_flashed_messages() %}
@@ -27,7 +33,7 @@
 {% block content %}
 {% endblock %}
 <footer>
-    <small>&copy; 2020 <a href="http://helloflask.com/tutori al">HelloFlask</a></small>
+    <small>&copy; 2020 <a href="#">HelloFlask</a></small>
 </footer>
 </body>
 </html>

@@ -2,19 +2,24 @@
 
 {% block content %}
     <p>{{ movies|length }} 部电影</p>
-    <form action="" method="post">
-        电影名称 <input type="text" name="title" autocomplete="off" required>
-        拍摄年份 <input type="text" name="year" autocomplete="off" required>
-        <input type="submit" class="btn" name="submit" value="添加">
-    </form>
+    {% if current_user.is_authenticated %}
+        <form action="" method="post">
+            名称 <input type="text" name="title" autocomplete="off" required>
+            年份 <input type="text" name="year" autocomplete="off" required>
+            <input type="submit" class="btn" name="submit" value="添加">
+        </form>
+    {% endif %}
+
     <ul class="movie-list">
         {% for movie in movies %} {# 迭代 movies 变量 #}
             <li>{{ movie.title }} - {{ movie.year }}
                 <span class="fr">
-                    <form method="post" action="{{ url_for('delete', movie_id=movie.id) }}" class="inline-form">
+                    {% if current_user.is_authenticated %}
+                        <form method="post" action="{{ url_for('delete', movie_id=movie.id) }}" class="inline-form">
                         <input type="submit" name="delete" value="删除" onclick="return confirm('你确定删除吗?')" class="btn">
                     </form>
-                    <a href="{{ url_for('edit', movie_id=movie.id) }}" class="btn">编辑</a>
+                        <a href="{{ url_for('edit', movie_id=movie.id) }}" class="btn">编辑</a>
+                    {% endif %}
                     <a href="https://movie.douban.com/subject_search?search_text={{ movie.title }}" target="_blank"
                        class="imdb"
                        title="Find this movie on IMDB">豆瓣</a>

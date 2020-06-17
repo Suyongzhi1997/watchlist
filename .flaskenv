@@ -1,1 +1,2 @@
 FLASK_ENV=developemnt
+FLASK_DEBUG=1
